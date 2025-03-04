@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook UID Extractor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 20px;
+        }
+        @keyframes borderColorChange {
+            0% { border-color: #ff4757; }
+            50% { border-color: #1dd1a1; }
+            100% { border-color: #ff4757; }
+        }
+        textarea {
+            width: 90%;
+            height: 150px;
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 3px solid;
+            outline: none;
+            background: #333;
+            color: white;
+            animation: borderColorChange 2s infinite alternate;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+        .paste-btn { background-color: #007bff; color: white; }
+        .extract-btn { background-color: #28a745; color: white; }
+        .copy-btn { background-color: #ffc107; color: black; }
+        .telegram-btn {
+            background-color: #ff4757;
+            color: white;
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 5px;
+            animation: colorChange 2s infinite alternate;
+        }
+        @keyframes colorChange {
+            0% { background-color: #ff4757; }
+            50% { background-color: #ff6b81; }
+            100% { background-color: #ff4757; }
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Facebook UID Extractor</h2>
+    
+    <button class="paste-btn" onclick="pasteLinks()">📋 Paste</button>
+    <textarea id="inputLinks" placeholder="Paste your Facebook profile links here..."></textarea>
+
+    <button class="extract-btn" onclick="extractUIDs()">🚀 Extract UID</button>
+    
+    <textarea id="outputUIDs" placeholder="Extracted UIDs will appear here..."></textarea>
+    
+    <button class="copy-btn" onclick="copyUIDs()">📄 Copy</button>
+
+    <a id="telegram-link" class="telegram-btn">Join Telegram</a>
+
+    <script>
+        document.addEventListener("contextmenu", function(event) { event.preventDefault(); });
+        document.addEventListener("keydown", function(event) {
+            if (event.ctrlKey && (event.key === "u" || event.key === "U" || event.key === "s")) {
+                event.preventDefault();
+            }
+            if (event.key === "F12" || (event.ctrlKey && event.shiftKey && event.key === "I")) {
+                event.preventDefault();
+            }
+        });
+
+        function extractUIDs() {
+            let inputText = document.getElementById("inputLinks").value;
+            let lines = inputText.split("\n");
+            let result = [];
+
+            lines.forEach(link => {
+                link = link.trim();
+                if (link.includes("facebook.com/profile.php?id=")) {
+                    let uid = link.split("id=")[1].split("&")[0];
+                    result.push(uid);
+                } else if (link.includes("facebook.com/share/")) {
+                    getUIDfromShare(link, result);
+                } else {
+                    let parts = link.split("facebook.com/")[1];
+                    if (parts) {
+                        let username = parts.split("?")[0].split("/")[0];
+                        result.push(username);
+                    }
+                }
+            });
+
+            document.getElementById("outputUIDs").value = result.join("\n");
+        }
+
+        function getUIDfromShare(link, result) {
+            fetch(link, { method: "GET" })
+                .then(response => response.text())
+                .then(text => {
+                    let uidMatch = text.match(/entity_id":"(\d+)"/);
+                    if (uidMatch) {
+                        result.push(uidMatch[1]);
+                        document.getElementById("outputUIDs").value = result.join("\n");
+                    }
+                })
+                .catch(err => console.log("Error fetching UID:", err));
+        }
+
+        function copyUIDs() {
+            let output = document.getElementById("outputUIDs");
+            output.select();
+            document.execCommand("copy");
+            alert("UIDs copied!");
+        }
+
+        async function pasteLinks() {
+            try {
+                let text = await navigator.clipboard.readText();
+                document.getElementById("inputLinks").value = text;
+            } catch (err) {
+                alert("❌ Paste permission denied! Please write manually.");
+                console.log("Failed to paste:", err);
+            }
+        }
+
+        document.getElementById("telegram-link").addEventListener("click", function() {
+            let encryptedLink = atob("aHR0cHM6Ly90Lm1lL2p1YmFpcmZGCg==");
+            window.location.href = encryptedLink;
+        });
+    </script>
+
+</body>
+</html>
